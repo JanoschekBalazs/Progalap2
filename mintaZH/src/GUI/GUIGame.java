@@ -42,8 +42,7 @@ public class GUIGame extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(null, "Number of mines can't be more mines than number of fields!", "Error", JOptionPane.ERROR_MESSAGE);
             initGame();
         }
-
-        game = new MineSweeperGame(new Dimension(width, height), mineCount);
+        else game = new MineSweeperGame(new Dimension(width, height), mineCount);
     }
 
     private int numberInputDialog(String msg) {
