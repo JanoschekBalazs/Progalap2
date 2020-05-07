@@ -1,9 +1,5 @@
 package terminal;
 
-import GUI.Coordinates;
-
-import java.util.HashSet;
-
 public class MineSweeperGame {
 
     private char[][] map;

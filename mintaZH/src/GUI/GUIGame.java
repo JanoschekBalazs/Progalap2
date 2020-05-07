@@ -4,17 +4,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashSet;
 
 public class GUIGame extends JFrame implements ActionListener {
 
     private JPanel headpanel;
     private JPanel contentpanel;
     private JPanel mainpanel;
+    private JButton[][] fields;
     private JButton reset;
 
-    private Dimension dim;
-    private int mineCount;
-    private Minefield map;
+    private MineSweeperGame game;
 
     public GUIGame(String title) {
         super(title);
@@ -27,41 +27,26 @@ public class GUIGame extends JFrame implements ActionListener {
 
     public void reset() {
         setVisible(false);
-        mainpanel.removeAll();
 
-        userInput();
+        initGame();
+        initGUI();
 
-        mainpanel.setLayout(new BorderLayout());
-
-        headpanel = new JPanel(new BorderLayout(100, 50));
-        reset = new JButton("Reset");
-        reset.setMaximumSize(new Dimension(20, 20));
-        reset.addActionListener(this);
-        headpanel.add(reset, BorderLayout.CENTER);
-        mainpanel.add(headpanel, BorderLayout.NORTH);
-
-        contentpanel = new JPanel(new GridLayout(dim.height, dim.width));
-        mainpanel.add(contentpanel, BorderLayout.CENTER);
-        map = new Minefield(dim, mineCount, contentpanel);
-        map.addActionListener(this);
-        pack();
-        setLocationRelativeTo(null);
         setVisible(true);
     }
 
-    public void userInput() {
+    private void initGame() {
         int width = numberInputDialog("How wide should the map be?");
-        int height = numberInputDialog("How heigh should the map be?");
+        int height = numberInputDialog("How high should the map be?");
         int mineCount = numberInputDialog("How many mines should be there?");
         if (mineCount > width * height) {
             JOptionPane.showMessageDialog(null, "Number of mines can't be more mines than number of fields!", "Error", JOptionPane.ERROR_MESSAGE);
-            userInput();
+            initGame();
         }
-        dim = new Dimension(width, height);
-        this.mineCount = mineCount;
+
+        game = new MineSweeperGame(new Dimension(width, height), mineCount);
     }
 
-    public int numberInputDialog(String msg) {
+    private int numberInputDialog(String msg) {
         int number;
         String input = JOptionPane.showInputDialog(null, msg, "Minesweeper", JOptionPane.QUESTION_MESSAGE);
         try {
@@ -76,17 +61,72 @@ public class GUIGame extends JFrame implements ActionListener {
         }
     }
 
+    private void initGUI(){
+
+        mainpanel.removeAll();
+
+        reset = new JButton("Reset");
+        reset.addActionListener(this);
+
+        headpanel = new JPanel(new BorderLayout(50, 50));
+        headpanel.add(reset, BorderLayout.CENTER);
+
+        contentpanel = new JPanel(new GridLayout(game.getDim().height, game.getDim().width));
+        buildContent();
+
+        mainpanel.setLayout(new BorderLayout());
+        mainpanel.add(headpanel, BorderLayout.NORTH);
+        mainpanel.add(contentpanel, BorderLayout.CENTER);
+
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    private void buildContent(){
+        int height = game.getDim().height;
+        int width = game.getDim().width;
+        fields = new JButton[height][width];
+        for (int x = 0; x < height; x++)
+            for (int y = 0; y < width; y++) {
+                fields[x][y] = new JButton("?");
+                fields[x][y].setSize(100, 100);
+                contentpanel.add(fields[x][y]);
+                fields[x][y].addActionListener(this);
+            }
+    }
+
     @Override
     public void actionPerformed(ActionEvent event) {
         JButton button = (JButton) event.getSource();
 
         if (button == reset) reset();
         else {
-            Coordinates coordinates = map.findCoordinates(button);
-            if (map.steppedOnMine(coordinates)) loseMessage();
-            else map.sweep(coordinates);
-            if (map.isCleared()) winMessage();
+            if (game.check(getButtonCoordinates(button)) == Field.DETONATED) gameOverMessage();
+            else {
+                updateState();
+                if (game.isCleared()) winMessage();
+            }
         }
+    }
+
+    private void updateState() {
+        HashSet<Field> sweptFields = game.getSweptFields();
+        int x, y;
+        for (Field sweptField : sweptFields) {
+            x = sweptField.getCoordinates().getX();
+            y = sweptField.getCoordinates().getY();
+            fields[x][y].setText(Integer.toString(sweptField.getState()));
+            fields[x][y].setEnabled(false);
+        }
+    }
+
+    public Coordinates getButtonCoordinates(JButton field) {
+        for (int x = 0; x < fields.length; x++) {
+            for (int y = 0; y < fields[x].length; y++) {
+                if (fields[x][y] == field) return new Coordinates(x, y);
+            }
+        }
+        return null;
     }
 
     public void winMessage() {
@@ -96,7 +136,7 @@ public class GUIGame extends JFrame implements ActionListener {
         } else System.exit(0);
     }
 
-    public void loseMessage() {
+    public void gameOverMessage() {
         if (JOptionPane.showConfirmDialog(null, "You have lost! Would you like to play again?") ==
                 JOptionPane.YES_OPTION) {
             reset();
@@ -104,6 +144,7 @@ public class GUIGame extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        new GUIGame("Minesweeper");
+
+        SwingUtilities.invokeLater(() -> new GUIGame("Mine Sweeper"));
     }
 }

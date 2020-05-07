@@ -4,11 +4,19 @@ import java.util.Objects;
 
 public class Coordinates {
 
-    public int x, y;
+    private int x, y;
 
     public Coordinates(int x, int y) {
         this.x = x;
         this.y = y;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
     }
 
     @Override
@@ -23,5 +31,10 @@ public class Coordinates {
     @Override
     public int hashCode() {
         return Objects.hash(x, y);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + (x + 1) + ", " + (y + 1) + ")";
     }
 }
